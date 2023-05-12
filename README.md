@@ -5,6 +5,8 @@
 * Directly coverting from pt to engine may have some problems, so I choose to convert it to onnx, and then compile in C++.
 * [Export the official pt model](https://docs.ultralytics.com/usage/cfg/#export)
   `yolo export model=yolov8s.pt format=onnx device=0 imgsz=640 simplify=True opset=13`  
+  it seems on jetson you can also do
+  `yolo mode=export model=yolov8s.pt format=onnx`, you don't need to put the device onto cuda when generating the onnx.
 * My tensorrt 8.2.1 supports onnx 1.9.0, and the max opset is 14
 * You may visualize the onnx model in [netron](https://netron.app/)
 ### Compile it in C++ node
