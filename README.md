@@ -130,6 +130,7 @@ cmake -D CMAKE_BUILD_TYPE=RELEASE \
         -D WITH_LIBV4L=ON \
         -D WITH_VTK=OFF \
         -D WITH_OPENGL=ON \
+        -D WITH_OPENCL=ON \
         -D WITH_LAPACK=ON \
         -D BUILD_WEBP=OFF \
         -D OPENCV_ENABLE_NONFREE=ON \
@@ -178,6 +179,14 @@ cd ~/catkin_ws/src
 git clone https://github.com/fizyr-forks/vision_opencv.git
 cd vision_opencv
 git checkout opencv4
+cd ..
+catkin_make
+```
+For ubuntu 20, you may clone the vision_opencv from official repo
+```
+git clone https://github.com/ros-perception/vision_opencv.git
+cd vision_opencv
+git checkout noetic
 cd ..
 catkin_make
 ```

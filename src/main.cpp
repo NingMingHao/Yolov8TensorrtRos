@@ -1,16 +1,35 @@
 #include "engine.h"
 #include <opencv2/opencv.hpp>
 #include <chrono>
+#include <ros/ros.h>
 
 typedef std::chrono::high_resolution_clock Clock;
 
 int main() {
+    // Initialize ROS
+    ros::init(argc, argv, "yolov8_tensorrt_node");
+    ros::NodeHandle nh;
+    ros::NodeHandle pnh("~");
+    // Read parameters
+    std::string onnxModelpath;
+    std::bool normalize;
+    std::bool halfPrecision;
+    std::uint maxWorkspaceSize;
+    std::bool doesSupportDynamicBatchSize;
+    pnh.param<std::string>("onnx_model_path", onnxModelpath, "../models/yolov8s.onnx");
+    pnh.param<bool>("normalize", normalize, true);
+    pnh.param<bool>("half_precision", halfPrecision, true);
+    pnh.param<std::uint>("max_workspace_size", maxWorkspaceSize, 2000000000); // 2GB
+    pnh.param<bool>("does_support_dynamic_batch_size", doesSupportDynamicBatchSize, false);
+
+
     // Specify our GPU inference configuration options
     Options options;
     // TODO: If your model only supports a static batch size
-    options.doesSupportDynamicBatchSize = false;
-    options.precision = Precision::FP16; // Use fp16 precision for faster inference.
-    options.maxWorkspaceSize = 1 << 30; // 1GB
+    options.doesSupportDynamicBatchSize = doesSupportDynamicBatchSize;
+    if (halfPrecision)
+        options.precision = Precision::FP16; // Use fp16 precision for faster inference.
+    options.maxWorkspaceSize = maxWorkspaceSize; 
 
     if (options.doesSupportDynamicBatchSize) {
         options.optBatchSize = 4;
@@ -22,11 +41,7 @@ int main() {
 
     Engine engine(options);
 
-    // TODO: Specify your model here.
-    // Must specify a dynamic batch size when exporting the model from onnx.
-    // If model only specifies a static batch size, must set the above variable doesSupportDynamicBatchSize to false.
-    const std::string onnxModelpath = "../models/yolov8n.onnx";
-
+    // Build the engine
     bool succ = engine.build(onnxModelpath);
     if (!succ) {
         throw std::runtime_error("Unable to build TRT engine.");
@@ -75,8 +90,6 @@ int main() {
         inputs.emplace_back(std::move(input));
     }
 
-    // Define our preprocessing code
-    bool normalize = true;
 
     // Discard the first inference time as it takes longer
     std::vector<std::vector<std::vector<float>>> featureVectors;
