@@ -1,7 +1,7 @@
 #include <iostream>
 #include <fstream>
 
-#include "engine.h"
+#include "engineTool.h"
 #include "NvOnnxParser.h"
 
 using namespace nvinfer1;
@@ -16,21 +16,23 @@ void Logger::log(Severity severity, const char *msg) noexcept {
     }
 }
 
-bool Engine::doesFileExist(const std::string &filepath) {
+bool EngineTool::doesFileExist(const std::string &filepath) {
     std::ifstream f(filepath.c_str());
     return f.good();
 }
 
-Engine::Engine(const Options &options)
-    : m_options(options) {
-    if (!m_options.doesSupportDynamicBatchSize) {
+EngineTool::EngineTool(const Options &options)
+{
+    m_options = options;
+    if (!m_options.doesSupportDynamicBatchSize)
+    {
         std::cout << "Model does not support dynamic batch size, using optBatchSize and maxBatchSize of 1" << std::endl;
         m_options.optBatchSize = 1;
         m_options.maxBatchSize = 1;
-    }
+        }
 }
 
-bool Engine::build(std::string onnxModelPath) {
+bool EngineTool::build(std::string onnxModelPath) {
     // Only regenerate the engine file if it has not already been generated for the specified options
     m_engineName = serializeEngineOptions(m_options, onnxModelPath);
     std::cout << "Searching for engine file with name: " << m_engineName << std::endl;
@@ -137,16 +139,7 @@ bool Engine::build(std::string onnxModelPath) {
     return true;
 }
 
-Engine::~Engine() {
-    // Free the GPU memory
-    for (auto & buffer : m_buffers) {
-        checkCudaErrorCode(cudaFree(buffer));
-    }
-
-    m_buffers.clear();
-}
-
-bool Engine::loadNetwork() {
+bool EngineTool::loadNetwork() {
     // Read the serialized model from disk
     std::ifstream file(m_engineName, std::ios::binary | std::ios::ate);
     std::streamsize size = file.tellg();
@@ -225,7 +218,7 @@ bool Engine::loadNetwork() {
     return true;
 }
 
-void Engine::checkCudaErrorCode(cudaError_t code) {
+void EngineTool::checkCudaErrorCode(cudaError_t code) {
     if (code != 0) {
         std::string errMsg = "CUDA operation failed with code: " + std::to_string(code) + "(" + cudaGetErrorName(code) + "), with message: " + cudaGetErrorString(code);
         std::cout << errMsg << std::endl;
@@ -233,7 +226,7 @@ void Engine::checkCudaErrorCode(cudaError_t code) {
     }
 }
 
-bool Engine::runInference(const std::vector<std::vector<cv::cuda::GpuMat>> &inputs, std::vector<std::vector<std::vector<float>>>& featureVectors, bool normalize) {
+bool EngineTool::runInference(const std::vector<std::vector<cv::cuda::GpuMat>> &inputs, std::vector<std::vector<std::vector<float>>>& featureVectors, bool normalize) {
     // First we do some error checking
     if (inputs.empty() || inputs[0].empty()) {
         std::cout << "===== Error =====" << std::endl;
@@ -360,7 +353,7 @@ bool Engine::runInference(const std::vector<std::vector<cv::cuda::GpuMat>> &inpu
     return true;
 }
 
-std::string Engine::serializeEngineOptions(const Options &options, const std::string &engineDir) {
+std::string EngineTool::serializeEngineOptions(const Options &options, const std::string &engineDir) {
     // use the filename of engineDir as the engine name
     std::string engineName;
     // Find the last '/' in the path.
@@ -371,8 +364,8 @@ std::string Engine::serializeEngineOptions(const Options &options, const std::st
     // Check if both '/' and '.' are found and '/' is before '.'.
     if (slashPos != std::string::npos && dotPos != std::string::npos && slashPos < dotPos)
     {
-        // Extract the substring between '/' and '.'.
-        engineName = engineDir.substr(slashPos + 1, dotPos - slashPos - 1);
+        // Extract the substring from start to '.'.
+        engineName = engineDir.substr(0, dotPos - 1);
     }
 
     // Add the GPU device name to the file to ensure that the model is only used on devices with the exact same GPU
@@ -403,7 +396,7 @@ std::string Engine::serializeEngineOptions(const Options &options, const std::st
     return engineName;
 }
 
-void Engine::getDeviceNames(std::vector<std::string>& deviceNames) {
+void EngineTool::getDeviceNames(std::vector<std::string>& deviceNames) {
     int numGPUs;
     cudaGetDeviceCount(&numGPUs);
 
@@ -415,7 +408,7 @@ void Engine::getDeviceNames(std::vector<std::string>& deviceNames) {
     }
 }
 
-cv::cuda::GpuMat Engine::resizeKeepAspectRatioPadRightBottom(const cv::cuda::GpuMat &input, size_t newDim, const cv::Scalar &bgcolor) {
+cv::cuda::GpuMat EngineTool::resizeKeepAspectRatioPadRightBottom(const cv::cuda::GpuMat &input, size_t newDim, const cv::Scalar &bgcolor) {
     float r = std::min(newDim / (input.cols * 1.0), newDim / (input.rows * 1.0));
     int unpad_w = r * input.cols;
     int unpad_h = r * input.rows;

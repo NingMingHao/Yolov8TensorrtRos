@@ -13,6 +13,7 @@
 * This part is modified based on [tensorrt-cpp-api](https://github.com/cyrusbehr/tensorrt-cpp-api/tree/main)
 * What I have done it to add a postprocess of the output (Nx84x8400) of the YOLOv8 
   * Remove unnecessary classes, only keeps the 0-16
+    0: person
     1: bicycle
     2: car
     3: motorcycle
@@ -121,6 +122,7 @@ cd build
 Then run the cmake, follow previous link to set the flags. For my case, the 3080ti has CUDA_ARCH_PTX to 8.6.
 ```
 cmake -D CMAKE_BUILD_TYPE=RELEASE \
+        -D CMAKE_CXX_FLAGS_RELEASE="-O3" \
         -D CMAKE_INSTALL_PREFIX=/usr/local \
         -D OPENCV_EXTRA_MODULES_PATH=/home/minghao/Documents/Gits/CudaInstall/opencv_contrib-4.5.2/modules \
         -D BUILD_TIFF=ON \
@@ -157,6 +159,47 @@ cmake -D CMAKE_BUILD_TYPE=RELEASE \
         -D WITH_CUBLAS=ON ..
 ```
 
+cmake command for jetson orin, specify the opencl path and library
+```
+cmake -D CMAKE_BUILD_TYPE=RELEASE \
+        -D CMAKE_CXX_FLAGS_RELEASE="-O3" \
+        -D CMAKE_INSTALL_PREFIX=/usr/local \
+        -D OPENCV_EXTRA_MODULES_PATH=/home/jetson/Downloads/opencv/opencv_contrib-4.5.4/modules \
+        -D OPENCL_INCLUDE_DIR=/usr/include \
+        -D OPENCL_LIBRARY=/usr/lib/aarch64-linux-gnu/libOpenCL.so.1 \
+        -D BUILD_TIFF=ON \
+        -D WITH_GSTREAMER=ON \
+        -D WITH_TBB=ON \
+        -D BUILD_TBB=ON \
+        -D WITH_EIGEN=ON \
+        -D WITH_V4L=ON \
+        -D WITH_LIBV4L=ON \
+        -D WITH_VTK=OFF \
+        -D WITH_OPENGL=ON \
+        -D WITH_OPENCL=ON \
+        -D WITH_LAPACK=ON \
+        -D BUILD_WEBP=OFF \
+        -D OPENCV_ENABLE_NONFREE=ON \
+        -D INSTALL_C_EXAMPLES=OFF \
+        -D PYTHON3_EXECUTABLE=/usr/bin/python3 \
+        -D PYTHON_INCLUDE_DIR=/usr/include/python3.8 \
+        -D PYTHON_LIBRARY=/usr/lib/libpython3.8.so \
+        -D PYTHON3_NUMPY_INCLUDE_DIRS=/home/jetson/.local/lib/python3.8/site-packages/numpy/core/include \
+        -D BUILD_OPENCV_PYTHON3=ON \
+        -D INSTALL_PYTHON_EXAMPLES=ON \
+        -D BUILD_NEW_PYTHON_SUPPORT=ON \
+        -D OPENCV_GENERATE_PKGCONFIG=ON \
+        -D BUILD_TESTS=OFF \
+        -D BUILD_EXAMPLES=OFF \
+        -D WITH_CUDA=ON \
+        -D ENABLE_FAST_MATH=ON \
+        -D CUDA_FAST_MATH=ON \
+        -D WITH_CUDNN=ON \
+        -D OPENCV_DNN_CUDA=ON \
+        -D CUDA_ARCH_BIN=5.3,6.0,6.1,7.0,7.5,8.7 \
+        -D CUDA_ARCH_PTX=8.7 \
+        -D WITH_CUBLAS=ON ..
+```
 Then run the make and install
 ```
 make -j$(nproc)

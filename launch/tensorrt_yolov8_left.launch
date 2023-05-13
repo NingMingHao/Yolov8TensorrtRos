@@ -1,0 +1,14 @@
+<launch>
+    <node pkg="tensorrt_yolov8" type="tensorrt_yolov8_node" name="tensorrt_yolov8_node_left" output="screen">
+        <param name="input_topic" value="/pylon_camera_node_left/image_rect/compressed"/>
+        <param name="output_topic" value="/bbox_array_left"/>
+        <param name="half_precision" value="true"/>
+        <param name="does_support_dynamic_batch_size" value="false"/>
+        <param name="max_workspace_size" value="2000000000"/> #2GB
+        <param name="onnx_model_name" value="yolov8s.onnx"/>
+        <param name="normalize" value="true"/>
+        <param name="wanted_class_nums" value="17"/>
+        <param name="confidence_threshold" value="0.5"/>
+        <param name="nms_threshold" value="0.4"/>
+    </node>
+</launch>

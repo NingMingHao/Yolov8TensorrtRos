@@ -1,4 +1,5 @@
-#pragma once
+#ifndef ENGINE_TOOL_H
+#define ENGINE_TOOL_H
 
 #include <opencv2/opencv.hpp>
 #include <opencv2/core/cuda.hpp>
@@ -34,10 +35,9 @@ class Logger : public nvinfer1::ILogger {
     void log (Severity severity, const char* msg) noexcept override;
 };
 
-class Engine {
+class EngineTool{
 public:
-    Engine(const Options& options);
-    ~Engine();
+    EngineTool(const Options &options);
     // Build the network
     bool build(std::string onnxModelPath);
     // Load and prepare the network for inference
@@ -46,11 +46,10 @@ public:
     // Input format [input][batch][image]
     // Output format [batch][output][feature_vector]
     bool runInference(const std::vector<std::vector<cv::cuda::GpuMat>>& inputs, std::vector<std::vector<std::vector<float>>>& featureVectors, bool normalize = true);
-
     // Utility method
     static cv::cuda::GpuMat resizeKeepAspectRatioPadRightBottom(const cv::cuda::GpuMat& input, size_t newDim, const cv::Scalar& bgcolor = cv::Scalar(0, 0, 0));
-
     const std::vector<nvinfer1::Dims3>& getInputDims() const { return m_inputDims; };
+
 private:
     // Converts the engine options into a string
     std::string serializeEngineOptions(const Options &options, const std::string &engineDir);
@@ -72,3 +71,5 @@ private:
 
     inline void checkCudaErrorCode(cudaError_t code);
 };
+
+#endif // ENGINE_TOOL_H
