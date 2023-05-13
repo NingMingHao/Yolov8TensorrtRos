@@ -37,8 +37,7 @@ build*
 cmake-build-*
 .idea/
 
-*.onnx
-*.pt
+models/*
 .catkin_workspace
 .vscode/c_cpp_properties.json
 .vscode/settings.json

@@ -5,7 +5,7 @@
         <param name="half_precision" value="true"/>
         <param name="does_support_dynamic_batch_size" value="false"/>
         <param name="max_workspace_size" value="2000000000"/> #2GB
-        <param name="onnx_model_name" value="yolov8s.onnx"/>
+        <param name="onnx_model_name" value="yolov8m.onnx"/>
         <param name="normalize" value="true"/>
         <param name="wanted_class_nums" value="17"/>
         <param name="confidence_threshold" value="0.5"/>

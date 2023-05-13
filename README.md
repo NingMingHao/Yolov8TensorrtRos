@@ -103,6 +103,9 @@ sudo apt-get install libgtk-3-dev libtbb-dev libatlas-base-dev gfortran libopenb
 sudo apt-get install libprotobuf-dev protobuf-compiler
 sudo apt-get install libgoogle-glog-dev libgflags-dev
 sudo apt-get install libgphoto2-dev libeigen3-dev libhdf5-dev doxygen
+sudo apt-get install libgl1-mesa-dev libglu1-mesa-dev freeglut3-dev
+sudo apt-get install ocl-icd-opencl-dev
+
 ```
 Download the OpenCV 4.5.2 and contrib from [OpenCV Archive](https://opencv.org/releases/)
 
@@ -137,6 +140,13 @@ cmake -D CMAKE_BUILD_TYPE=RELEASE \
         -D WITH_OPENCL=ON \
         -D WITH_LAPACK=ON \
         -D BUILD_WEBP=OFF \
+        -D OpenBLAS_INCLUDE_DIR=/usr/include/openblas \
+        -D OpenBLAS_LIB=/usr/lib/x86_64-linux-gnu/libopenblas.so \
+        -D Atlas_CLAPACK_INCLUDE_DIR=/usr/include/x86_64-linux-gnu/atlas \
+        -D Atlas_INCLUDE_DIR=/usr/include/x86_64-linux-gnu/atlas \
+        -D Atlas_LIB_DIR=/usr/lib/x86_64-linux-gnu \
+        -D Atlas_CBLAS_LIBRARY=/usr/lib/x86_64-linux-gnu/libcblas.so \
+        -D Atlas_BLAS_LIBRARY=/usr/lib/x86_64-linux-gnu/libatlas.so \
         -D OPENCV_ENABLE_NONFREE=ON \
         -D INSTALL_C_EXAMPLES=OFF \
         -D PYTHON3_EXECUTABLE=/usr/bin/python3 \
@@ -149,12 +159,13 @@ cmake -D CMAKE_BUILD_TYPE=RELEASE \
         -D OPENCV_GENERATE_PKGCONFIG=ON \
         -D BUILD_TESTS=OFF \
         -D BUILD_EXAMPLES=OFF \
+        -D BUILD_PERF_TESTS=OFF \
         -D WITH_CUDA=ON \
         -D ENABLE_FAST_MATH=ON \
         -D CUDA_FAST_MATH=ON \
         -D WITH_CUDNN=ON \
         -D OPENCV_DNN_CUDA=ON \
-        -D CUDA_ARCH_BIN=5.3,6.0,6.1,7.0,7.5,8.6 \
+        -D CUDA_ARCH_BIN=8.6 \
         -D CUDA_ARCH_PTX=8.6 \
         -D WITH_CUBLAS=ON ..
 ```
@@ -171,6 +182,13 @@ cmake -D CMAKE_BUILD_TYPE=RELEASE \
         -D WITH_GSTREAMER=ON \
         -D WITH_TBB=ON \
         -D BUILD_TBB=ON \
+        -D OpenBLAS_INCLUDE_DIR=/usr/include/openblas \
+        -D OpenBLAS_LIB=/usr/lib/aarch62-linux-gnu/libopenblas.so \
+        -D Atlas_CLAPACK_INCLUDE_DIR=/usr/include/aarch62-linux-gnu/atlas \
+        -D Atlas_INCLUDE_DIR=/usr/include/aarch62-linux-gnu/atlas \
+        -D Atlas_LIB_DIR=/usr/lib/aarch62-linux-gnu \
+        -D Atlas_CBLAS_LIBRARY=/usr/lib/aarch62-linux-gnu/libcblas.so \
+        -D Atlas_BLAS_LIBRARY=/usr/lib/aarch62-linux-gnu/libatlas.so \
         -D WITH_EIGEN=ON \
         -D WITH_V4L=ON \
         -D WITH_LIBV4L=ON \
@@ -191,12 +209,13 @@ cmake -D CMAKE_BUILD_TYPE=RELEASE \
         -D OPENCV_GENERATE_PKGCONFIG=ON \
         -D BUILD_TESTS=OFF \
         -D BUILD_EXAMPLES=OFF \
+        -D BUILD_PERF_TESTS=OFF \
         -D WITH_CUDA=ON \
         -D ENABLE_FAST_MATH=ON \
         -D CUDA_FAST_MATH=ON \
         -D WITH_CUDNN=ON \
         -D OPENCV_DNN_CUDA=ON \
-        -D CUDA_ARCH_BIN=5.3,6.0,6.1,7.0,7.5,8.7 \
+        -D CUDA_ARCH_BIN=8.7 \
         -D CUDA_ARCH_PTX=8.7 \
         -D WITH_CUBLAS=ON ..
 ```
@@ -231,6 +250,14 @@ For ubuntu 20, you may clone the vision_opencv from official repo
 ```
 git clone https://github.com/ros-perception/vision_opencv.git
 cd vision_opencv
+git checkout noetic
+cd ..
+catkin_make
+```
+For ubuntu 20, the image pipeline is not available, so we need to clone the image_pipeline from official repo
+```
+git clone https://github.com/ros-perception/image_pipeline.git
+cd image_pipeline
 git checkout noetic
 cd ..
 catkin_make

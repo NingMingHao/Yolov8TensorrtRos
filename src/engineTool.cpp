@@ -365,7 +365,7 @@ std::string EngineTool::serializeEngineOptions(const Options &options, const std
     if (slashPos != std::string::npos && dotPos != std::string::npos && slashPos < dotPos)
     {
         // Extract the substring from start to '.'.
-        engineName = engineDir.substr(0, dotPos - 1);
+        engineName = engineDir.substr(0, dotPos);
     }
 
     // Add the GPU device name to the file to ensure that the model is only used on devices with the exact same GPU

@@ -4,7 +4,7 @@
 #include <opencv2/dnn.hpp>
 #include <ros/package.h>
 
-typedef std::chrono::high_resolution_clock Clock;
+typedef std::chrono::steady_clock Clock;
 
 EngineRosWrapper::EngineRosWrapper(ros::NodeHandle &nh, ros::NodeHandle &pnh, const Options &options):engineTool_(options)
 {
@@ -52,22 +52,35 @@ EngineRosWrapper::EngineRosWrapper(ros::NodeHandle &nh, ros::NodeHandle &pnh, co
 
 void EngineRosWrapper::callback_compressedImage(const sensor_msgs::CompressedImageConstPtr& msg) {
     ROS_INFO("callback_compressedImage");
+    auto start_time = Clock::now();
     // convert to cv::Mat
     cv::Mat cvImg = cv::imdecode(cv::Mat(msg->data), cv::IMREAD_COLOR);
+    //log the time
+    auto img_decode_time = Clock::now();
+    auto img_decode_duration = std::chrono::duration_cast<std::chrono::milliseconds>(img_decode_time - start_time).count();
+    std::cout << "img_decode_time: " << img_decode_duration << " ms" << std::endl;
+    
     // process
     jsk_recognition_msgs::BoundingBoxArray bboxarry = process(cvImg);
     bboxarry.header = msg->header;
     pub_.publish(bboxarry);
+    auto end_time = Clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count();
+    std::cout << "all run time: " << duration << " ms" << std::endl;
 }
 
 void EngineRosWrapper::callback_image(const sensor_msgs::ImageConstPtr& msg) {
     ROS_INFO("callback_compressedImage");
+    auto start_time = Clock::now();
     // convert to cv::Mat
     cv_bridge::CvImageConstPtr cv_ptr = cv_bridge::toCvShare(msg, "bgr8");
     // process
     jsk_recognition_msgs::BoundingBoxArray bboxarry = process(cv_ptr->image);
     bboxarry.header = msg->header;
     pub_.publish(bboxarry);
+    auto end_time = Clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count();
+    std::cout << "all run time: " << duration << " ms" << std::endl;
 }
 
 jsk_recognition_msgs::BoundingBoxArray EngineRosWrapper::process(const cv::Mat &cpuImg)
@@ -96,15 +109,17 @@ jsk_recognition_msgs::BoundingBoxArray EngineRosWrapper::process(const cv::Mat &
     float height_scale = (float)cpuImg.rows / inputDims[0].d[2];
     float width_scale = (float)cpuImg.cols / inputDims[0].d[1];
     //log the time
-    auto data_preprocess_time = Clock::now();
-    ROS_INFO("data preprocess time: %f ms", std::chrono::duration_cast<std::chrono::milliseconds>(data_preprocess_time - start_time).count());
+    auto preprocess_time = Clock::now();
+    auto preprocess_duration = std::chrono::duration_cast<std::chrono::milliseconds>(preprocess_time - start_time).count();
+    std::cout << "preprocess time: " << preprocess_duration << " ms" << std::endl;
 
     // inference
     featureVectors_.clear();
     engineTool_.runInference(inputs, featureVectors_, normalize_);
     //log the time
     auto inference_time = Clock::now();
-    ROS_INFO("inference time: %f ms", std::chrono::duration_cast<std::chrono::milliseconds>(inference_time - data_preprocess_time).count());
+    auto inference_duration = std::chrono::duration_cast<std::chrono::milliseconds>(inference_time - preprocess_time).count();
+    std::cout << "inference time: " << inference_duration << " ms" << std::endl;
 
     // post process NMS, the featureVectors_ is Batchx1x(84x8400)
     // only use the first batch, and convert to vector of cv::Mat
@@ -130,6 +145,7 @@ jsk_recognition_msgs::BoundingBoxArray EngineRosWrapper::process(const cv::Mat &
         cv::Point classIdPoint;
         double classProb;
         cv::minMaxLoc(scores, 0, &classProb, 0, &classIdPoint);
+
         if (classProb > confidenceThreshold_)
         {
             int centerX = (int)(oneDetection.at<float>(0) * width_scale);
@@ -138,7 +154,7 @@ jsk_recognition_msgs::BoundingBoxArray EngineRosWrapper::process(const cv::Mat &
             int height = (int)(oneDetection.at<float>(3) * height_scale);
             int left = centerX - width / 2;
             int top = centerY - height / 2;
-            classIds.push_back(classIdPoint.x);
+            classIds.push_back(classIdPoint.y);
             confidences.push_back((float)classProb);
             boxes.push_back(cv::Rect(left, top, width, height));
         }
@@ -187,8 +203,10 @@ jsk_recognition_msgs::BoundingBoxArray EngineRosWrapper::process(const cv::Mat &
         bbox.label = nmsClassIds[i];
         bboxArray.boxes.push_back(bbox);
     }
+
     //log the time
-    auto post_process_time = Clock::now();
-    ROS_INFO("post process time: %f ms", std::chrono::duration_cast<std::chrono::milliseconds>(post_process_time - inference_time).count());
+    auto postprocess_time = Clock::now();
+    auto postprocess_duration = std::chrono::duration_cast<std::chrono::milliseconds>(postprocess_time - inference_time).count();
+    std::cout << "postprocess time: " << postprocess_duration << " ms" << std::endl;
     return bboxArray;
 }
