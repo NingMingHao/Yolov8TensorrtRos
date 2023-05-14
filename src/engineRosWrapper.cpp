@@ -70,7 +70,7 @@ void EngineRosWrapper::callback_compressedImage(const sensor_msgs::CompressedIma
 }
 
 void EngineRosWrapper::callback_image(const sensor_msgs::ImageConstPtr& msg) {
-    ROS_INFO("callback_compressedImage");
+    ROS_INFO("callback_rawImage");
     auto start_time = Clock::now();
     // convert to cv::Mat
     cv_bridge::CvImageConstPtr cv_ptr = cv_bridge::toCvShare(msg, "bgr8");

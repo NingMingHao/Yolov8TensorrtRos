@@ -1,8 +1,8 @@
 <launch>
   <arg name="use_compressed" default="true" />
     <node pkg="tensorrt_yolov8" type="tensorrt_yolov8_node" name="tensorrt_yolov8_node_right" output="screen">
-        <param name="input_topic" value="/pylon_camera_node_center/image_rect/compressed" if="$(arg use_compressed)"/>
-        <param name="input_topic" value="/pylon_camera_node_center/image_rect" unless="$(arg use_compressed)"/>
+        <param name="input_topic" value="/pylon_camera_node_right/image_rect/compressed" if="$(arg use_compressed)"/>
+        <param name="input_topic" value="/pylon_camera_node_right/image_rect" unless="$(arg use_compressed)"/>
         <param name="output_topic" value="/bbox_array_right"/>
         <param name="half_precision" value="true"/>
         <param name="does_support_dynamic_batch_size" value="false"/>
