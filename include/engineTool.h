@@ -45,7 +45,7 @@ public:
     // Run inference.
     // Input format [input][batch][image]
     // Output format [batch][output][feature_vector]
-    bool runInference(const std::vector<std::vector<cv::cuda::GpuMat>>& inputs, std::vector<std::vector<std::vector<float>>>& featureVectors, bool normalize = true);
+    bool runInference(const std::vector<std::vector<cv::cuda::GpuMat>> &inputs, std::vector<std::vector<std::vector<float>>> &featureVectors, bool normalize, cudaStream_t inferenceCudaStream);
     // Utility method
     static cv::cuda::GpuMat resizeKeepAspectRatioPadRightBottom(const cv::cuda::GpuMat& input, size_t newDim, const cv::Scalar& bgcolor = cv::Scalar(0, 0, 0));
     const std::vector<nvinfer1::Dims3>& getInputDims() const { return m_inputDims; };

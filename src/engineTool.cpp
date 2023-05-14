@@ -226,7 +226,8 @@ void EngineTool::checkCudaErrorCode(cudaError_t code) {
     }
 }
 
-bool EngineTool::runInference(const std::vector<std::vector<cv::cuda::GpuMat>> &inputs, std::vector<std::vector<std::vector<float>>>& featureVectors, bool normalize) {
+bool EngineTool::runInference(const std::vector<std::vector<cv::cuda::GpuMat>> &inputs, std::vector<std::vector<std::vector<float>>> &featureVectors, bool normalize, cudaStream_t inferenceCudaStream)
+{
     // First we do some error checking
     if (inputs.empty() || inputs[0].empty()) {
         std::cout << "===== Error =====" << std::endl;
@@ -261,8 +262,6 @@ bool EngineTool::runInference(const std::vector<std::vector<cv::cuda::GpuMat>> &
         }
     }
 
-    // Create the cuda stream that will be used for inference
-    cudaStream_t inferenceCudaStream;
     checkCudaErrorCode(cudaStreamCreate(&inferenceCudaStream));
 
     // Preprocess all the inputs
@@ -349,7 +348,6 @@ bool EngineTool::runInference(const std::vector<std::vector<cv::cuda::GpuMat>> &
 
     // Synchronize the cuda stream
     checkCudaErrorCode(cudaStreamSynchronize(inferenceCudaStream));
-    checkCudaErrorCode(cudaStreamDestroy(inferenceCudaStream));
     return true;
 }
 

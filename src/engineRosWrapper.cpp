@@ -48,6 +48,15 @@ EngineRosWrapper::EngineRosWrapper(ros::NodeHandle &nh, ros::NodeHandle &pnh, co
     }
     // advertise output topic
     pub_ = nh.advertise<jsk_recognition_msgs::BoundingBoxArray>(outputTopic_, 1);
+
+    cudaError_t err = cudaStreamCreate(&inferenceCudaStream_);
+    if (err != 0) {
+        throw std::runtime_error("Unable to create inference cuda stream.");
+    }
+}
+
+EngineRosWrapper::~EngineRosWrapper() {
+    cudaStreamDestroy(inferenceCudaStream_);
 }
 
 void EngineRosWrapper::callback_compressedImage(const sensor_msgs::CompressedImageConstPtr& msg) {
@@ -115,7 +124,7 @@ jsk_recognition_msgs::BoundingBoxArray EngineRosWrapper::process(const cv::Mat &
 
     // inference
     featureVectors_.clear();
-    engineTool_.runInference(inputs, featureVectors_, normalize_);
+    engineTool_.runInference(inputs, featureVectors_, normalize_, inferenceCudaStream_);
     //log the time
     auto inference_time = Clock::now();
     auto inference_duration = std::chrono::duration_cast<std::chrono::milliseconds>(inference_time - preprocess_time).count();

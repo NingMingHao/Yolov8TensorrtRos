@@ -8,12 +8,14 @@
 class EngineRosWrapper {
 public:
     EngineRosWrapper(ros::NodeHandle& nh, ros::NodeHandle& pnh, const Options& options);
-    void callback_compressedImage(const sensor_msgs::CompressedImageConstPtr& msg);
+    ~EngineRosWrapper();
+    void callback_compressedImage(const sensor_msgs::CompressedImageConstPtr &msg);
     void callback_image(const sensor_msgs::ImageConstPtr& msg);
     jsk_recognition_msgs::BoundingBoxArray process(const cv::Mat &img);
 
 private:
     EngineTool engineTool_;
+    cudaStream_t inferenceCudaStream_;
     ros::Subscriber sub_compressedImage_;
     ros::Subscriber sub_image_;
     ros::Publisher pub_;
