@@ -1,10 +1,8 @@
 # Yolov8TensorrtRos
 
-This repo is part of the perception for the Waterloo all-weather autonomous shutlle ([WATonoBus](https://uwaterloo.ca/mechatronic-vehicle-systems-lab/research/watonobus)) from the Mechatronic Vehicle Systems Lab, University of Waterloo.
+This repo is part of the perception for the Waterloo all-weather autonomous shutlle ([WATonoBus](https://uwaterloo.ca/mechatronic-vehicle-systems-lab/research/watonobus)) from the Mechatronic Vehicle Systems Lab, University of Waterloo. If you are interested in our works, you may email to [Minghao Ning](m3ning@uwaterloo.ca).
 
-<video width="320" height="240" controls>
-  <source src="data/JetsonOrinTestVideo.mp4" type="video/mp4">
-</video>
+![figure](data/JetsonOrinTestVideo.gif)
 
 ## Instruction for Applying Yolov8 on ROS with Tensorrt acceleration
 ### Get Yolov8 onnx model using [Ultralytics](https://github.com/ultralytics/ultralytics)
