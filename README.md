@@ -1,5 +1,11 @@
 # Yolov8TensorrtRos
 
+This repo is part of the perception for the Waterloo all-weather autonomous shutlle ([WATonoBus](https://uwaterloo.ca/mechatronic-vehicle-systems-lab/research/watonobus)) from the Mechatronic Vehicle Systems Lab, University of Waterloo.
+
+<figure class="video_container">
+  <iframe src="./data/JetsonOrinTestVideo.mp4" frameborder="0" allowfullscreen="true"> </iframe>
+</figure>
+
 ## Instruction for Applying Yolov8 on ROS with Tensorrt acceleration
 ### Get Yolov8 onnx model using [Ultralytics](https://github.com/ultralytics/ultralytics)
 * Directly coverting from pt to engine may have some problems, so I choose to convert it to onnx, and then compile in C++.
@@ -11,38 +17,42 @@
 * You may visualize the onnx model in [netron](https://netron.app/)
 ### Compile it in C++ node
 * This part is modified based on [tensorrt-cpp-api](https://github.com/cyrusbehr/tensorrt-cpp-api/tree/main)
-* What I have done it to add a postprocess of the output (Nx84x8400) of the YOLOv8 
-  * Remove unnecessary classes, only keeps the 0-16
-    0: person
-    1: bicycle
-    2: car
-    3: motorcycle
-    4: airplane
-    5: bus
-    6: train
-    7: truck
-    8: boat
-    9: traffic light
-    10: fire hydrant
-    11: stop sign
-    12: parking meter
-    13: bench
-    14: bird
-    15: cat
-    16: dog
-  * The NMS for each class
+* What I have done:
+  * Add a postprocess of the output (Nx84x8400) of the YOLOv8 
+    * Remove unnecessary classes, only keeps the 0-16, you can customize this in the roslaunch
+      0: person
+      1: bicycle
+      2: car
+      3: motorcycle
+      4: airplane
+      5: bus
+      6: train
+      7: truck
+      8: boat
+      9: traffic light
+      10: fire hydrant
+      11: stop sign
+      12: parking meter
+      13: bench
+      14: bird
+      15: cat
+      16: dog
+    * The NMS for each class
   * Set the parameters in roslaunch
     * topics
     * conf_threshold
     * IOU_threshold
     * GPU_workspace (bytes)
+    * model type
+  * Only use one shared inference stream for predicting on received images
+* For the first time you launch the node, it will take some time to convert the onnx model into engine model
 
-## Current environment
+# Tested Enviroment
+## Jetson Orin environment (Ubuntu20)
 Jetson Orin (Jetpack 5.0.2), CUDA, cuDNN, OPENCV are included
 
-
 ## Environment setup on Ubuntu 18.04
-Using the Cuda 11.4.4, CuDNN 8.2.2, TensorRT 8.2.1, OpenCV 4.5.2
+Using the Cuda 11.4.4, CuDNN 8.2.2, TensorRT 8.2.1, OpenCV 4.5.2, and Eigen 3.3.7
 Mainly following the [Cuda Cudnn Opencv Install](https://medium.com/@pydoni/how-to-install-cuda-11-4-cudnn-8-2-opencv-4-5-on-ubuntu-20-04-65c4aa415a7b)
 
 ### First remove all the cuda and cudnn and nvidia driver
@@ -127,7 +137,7 @@ Then run the cmake, follow previous link to set the flags. For my case, the 3080
 cmake -D CMAKE_BUILD_TYPE=RELEASE \
         -D CMAKE_CXX_FLAGS_RELEASE="-O3" \
         -D CMAKE_INSTALL_PREFIX=/usr/local \
-        -D OPENCV_EXTRA_MODULES_PATH=/home/minghao/Documents/Gits/CudaInstall/opencv_contrib-4.5.2/modules \
+        -D OPENCV_EXTRA_MODULES_PATH=$PWD/../../opencv_contrib-4.5.2/modules \
         -D BUILD_TIFF=ON \
         -D WITH_GSTREAMER=ON \
         -D WITH_TBB=ON \

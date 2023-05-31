@@ -262,8 +262,6 @@ bool EngineTool::runInference(const std::vector<std::vector<cv::cuda::GpuMat>> &
         }
     }
 
-    checkCudaErrorCode(cudaStreamCreate(&inferenceCudaStream));
-
     // Preprocess all the inputs
     for (size_t i = 0; i < numInputs; ++i) {
         const auto& batchInput = inputs[i];
