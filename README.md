@@ -1,6 +1,6 @@
 # Yolov8TensorrtRos
 
-This repo is part of the perception for the Waterloo all-weather autonomous shutlle ([WATonoBus](https://uwaterloo.ca/mechatronic-vehicle-systems-lab/research/watonobus)) from the Mechatronic Vehicle Systems Lab, University of Waterloo. If you are interested in our works, you may email to [Minghao Ning](m3ning@uwaterloo.ca).
+This repo is part of the perception for the Waterloo all-weather autonomous shutlle ([WATonoBus](https://uwaterloo.ca/mechatronic-vehicle-systems-lab/research/watonobus)) from the Mechatronic Vehicle Systems Lab, University of Waterloo. If you are interested in our works, you are welcome to contact [Minghao Ning](mailto:m3ning@uwaterloo.ca).
 
 ![figure](data/JetsonOrinTestVideo.gif)
 
