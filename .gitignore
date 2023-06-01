@@ -37,7 +37,12 @@ build*
 cmake-build-*
 .idea/
 
+# Ignore everything in the models directory
 models/*
+
+# But do not ignore .onnx files in models directory
+!models/*.onnx
+
 .catkin_workspace
 .vscode/c_cpp_properties.json
 .vscode/settings.json

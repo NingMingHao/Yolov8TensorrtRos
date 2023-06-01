@@ -5,6 +5,7 @@ This repo is part of the perception for the Waterloo all-weather autonomous shut
 ![figure](data/JetsonOrinTestVideo.gif)
 
 ## Instruction for Applying Yolov8 on ROS with Tensorrt acceleration
+### I have uploaded the onnx models for medium, small and tiny versions of yolov8 for your usage
 ### Get Yolov8 onnx model using [Ultralytics](https://github.com/ultralytics/ultralytics)
 * Directly coverting from pt to engine may have some problems, so I choose to convert it to onnx, and then compile in C++.
 * [Export the official pt model](https://docs.ultralytics.com/usage/cfg/#export)
