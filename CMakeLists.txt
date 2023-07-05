@@ -15,6 +15,7 @@ find_package(catkin REQUIRED COMPONENTS
   rospy
   roslib
   cv_bridge
+  autoware_perception_msgs
 )
 
 # We require CUDA, OpenCV, and TensorRT
@@ -29,7 +30,7 @@ find_package(TensorRT REQUIRED)
 catkin_package(
   INCLUDE_DIRS include
   LIBRARIES ${PROJECT_NAME}
-  CATKIN_DEPENDS roscpp sensor_msgs std_msgs cv_bridge
+  CATKIN_DEPENDS roscpp sensor_msgs std_msgs cv_bridge autoware_perception_msgs
   DEPENDS OpenCV TensorRT CUDA
 )
 
