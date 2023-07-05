@@ -22,6 +22,7 @@
   <depend>rospy</depend>
   <depend>roslib</depend>
   <depend>std_msgs</depend>
+  <depend>autoware_perception_msgs</depend>
 
   <!-- The export tag contains other, unspecified, tags -->
   <export>

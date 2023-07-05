@@ -1,0 +1,25 @@
+<launch>
+  <arg name="use_compressed" default="true" />
+  <arg name="input_topic" default="/pylon_camera_node_center/image_rect" doc="Input image topic name." />
+  <arg name="camera_info_topic" default="" doc="Optional:provide cam_info if you want to rectify the image" />
+  <arg name="output_topic" default="/bbox_array" doc="Output object array topic name." />
+  <arg name="label_file" default="$(find tensorrt_yolov8)/models/coco.names" doc="Label file path." />
+  <arg name="half_precision" default="true" doc="Use half precision FP16 inference." />
+  <arg name="onnx_model_path" default="$(find tensorrt_yolov8)/models/yolov8m.onnx" doc="ONNX model path." />
+  
+  <node pkg="tensorrt_yolov8" type="tensorrt_yolov8_node" name="tensorrt_yolov8_node_01" output="screen">
+      <param name="input_topic" value="$(arg input_topic)/compressed" if="$(arg use_compressed)"/>
+      <param name="input_topic" value="$(arg input_topic)" unless="$(arg use_compressed)"/>
+      <param name="cam_info" value="$(arg camera_info_topic)"/>
+      <param name="output_topic" value="$(arg output_topic)"/>
+      <param name="half_precision" value="$(arg half_precision)"/>
+      <param name="does_support_dynamic_batch_size" value="false"/>
+      <param name="max_workspace_size" value="2000000000"/> 
+      <param name="onnx_model_path" value="$(arg onnx_model_path)"/>
+      <param name="label_file" type="str" value="$(arg label_file)"/>
+      <param name="normalize" value="true"/>
+      <param name="wanted_class_nums" value="17"/>
+      <param name="confidence_threshold" value="0.4"/>
+      <param name="nms_threshold" value="0.4"/>
+  </node>
+</launch>
