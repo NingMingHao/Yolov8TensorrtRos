@@ -46,6 +46,10 @@ EngineRosWrapper::EngineRosWrapper(ros::NodeHandle &nh, ros::NodeHandle &pnh, co
     batchSize_ = options.optBatchSize;
     ROS_INFO("[%s] batch size: %d", __APP_NAME__, batchSize_);
 
+    pnh.param<double>("process_rate", operateRate_, 0.5);
+    ROS_INFO("[%s] process rate: %f", __APP_NAME__, operateRate_);
+    timer_ = nh.createTimer(ros::Duration(1.0 / operateRate_), &EngineRosWrapper::timerCallback, this);    
+
     if (!readLabelFile(labelFile_, &labels_)) {
         ROS_ERROR("Could not find label file");
     }
@@ -91,47 +95,42 @@ EngineRosWrapper::~EngineRosWrapper() {
 void EngineRosWrapper::callback_compressedImage(const sensor_msgs::CompressedImageConstPtr& msg) {
     auto start_time = Clock::now();
     // convert to cv::Mat
-    cv::Mat cvImg = cv::imdecode(cv::Mat(msg->data), cv::IMREAD_COLOR);
-    //log the time
-    auto img_decode_time = Clock::now();
-    auto img_decode_duration = std::chrono::duration_cast<std::chrono::milliseconds>(img_decode_time - start_time).count();
+    latest_image_ = cv::imdecode(cv::Mat(msg->data), cv::IMREAD_COLOR);
     if (camera_info_ok_)
     {
       // undistort image
-      cv::Mat undistorted_image;
-      cv::Mat in_image = cvImg.clone();
-      cv::undistort(in_image, cvImg, camera_intrinsics_, distortion_coefficients_);
+      cv::Mat in_image = latest_image_.clone();
+      cv::undistort(in_image, latest_image_, camera_intrinsics_, distortion_coefficients_);
     }    
-    ROS_INFO("[%s] img_decode_time: %d ms", __APP_NAME__, img_decode_duration);
-    
-    // process
-    autoware_perception_msgs::DynamicObjectWithFeatureArray bboxarry = process(cvImg);
-    bboxarry.header = msg->header;
-    publisher_obj_.publish(bboxarry);
-    auto end_time = Clock::now();
-    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count();
-    ROS_INFO("[%s] all run time: %d ms", __APP_NAME__, duration);
 }
 
 void EngineRosWrapper::callback_image(const sensor_msgs::ImageConstPtr& msg) {
-    ROS_INFO("callback_rawImage");
-    auto start_time = Clock::now();
     // convert to cv::Mat
     cv_bridge::CvImageConstPtr cv_ptr = cv_bridge::toCvShare(msg, "bgr8");
     if (camera_info_ok_)
     {
       // undistort image
-      cv::Mat undistorted_image;
       cv::Mat in_image = cv_ptr->image.clone();
       cv::undistort(in_image, cv_ptr->image, camera_intrinsics_, distortion_coefficients_);
     }
-    // process
-    autoware_perception_msgs::DynamicObjectWithFeatureArray bboxarry = process(cv_ptr->image);
-    bboxarry.header = msg->header;
+    latest_image_ = cv_ptr->image;
+    latest_image_time_ = msg->header.stamp;
+}
+
+// Timer callback function
+void EngineRosWrapper::timerCallback(const ros::TimerEvent&) {
+    // Check if there is a new image to process
+    // if (latest_image_.empty() || latest_image_time_ <= last_processed_image_time_)
+    //     return;
+    if (latest_image_.empty())
+        return;    
+    // Process the image
+    autoware_perception_msgs::DynamicObjectWithFeatureArray bboxarry = process(latest_image_);
+    // Set the time the image was processed
+    last_processed_image_time_ = latest_image_time_;
+    bboxarry.header.stamp = latest_image_time_;
+    // Publish the result
     publisher_obj_.publish(bboxarry);
-    auto end_time = Clock::now();
-    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count();
-    ROS_INFO("[%s] all run time: %d ms", __APP_NAME__, duration);
 }
 
 autoware_perception_msgs::DynamicObjectWithFeatureArray EngineRosWrapper::process(const cv::Mat &cpuImg)

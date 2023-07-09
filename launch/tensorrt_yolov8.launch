@@ -3,6 +3,7 @@
   <arg name="input_topic" default="/pylon_camera_node_center/image_rect" doc="Input image topic name." />
   <arg name="camera_info_topic" default="" doc="Optional:provide cam_info if you want to rectify the image" />
   <arg name="output_topic" default="/bbox_array" doc="Output object array topic name." />
+  <arg name="process_rate" default="0.5" doc="Processing Frequency." />
   <arg name="label_file" default="$(find tensorrt_yolov8)/models/coco.names" doc="Label file path." />
   <arg name="half_precision" default="true" doc="Use half precision FP16 inference." />
   <arg name="onnx_model_path" default="$(find tensorrt_yolov8)/models/yolov8m.onnx" doc="ONNX model path." />
@@ -12,6 +13,7 @@
       <param name="input_topic" value="$(arg input_topic)" unless="$(arg use_compressed)"/>
       <param name="cam_info" value="$(arg camera_info_topic)"/>
       <param name="output_topic" value="$(arg output_topic)"/>
+      <param name="process_rate" value="$(arg process_rate)"/>
       <param name="half_precision" value="$(arg half_precision)"/>
       <param name="does_support_dynamic_batch_size" value="false"/>
       <param name="max_workspace_size" value="2000000000"/> 

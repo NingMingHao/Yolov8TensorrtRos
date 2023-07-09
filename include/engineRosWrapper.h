@@ -17,6 +17,7 @@ public:
     ~EngineRosWrapper();
     void callback_compressedImage(const sensor_msgs::CompressedImageConstPtr &msg);
     void callback_image(const sensor_msgs::ImageConstPtr& msg);
+    void timerCallback(const ros::TimerEvent&);
     autoware_perception_msgs::DynamicObjectWithFeatureArray process(const cv::Mat &img);
     bool readLabelFile(const std::string & filepath, std::vector<std::string> * labels);
 
@@ -40,6 +41,7 @@ private:
     int wantedClassNums_;
     float confidenceThreshold_;
     float nmsThreshold_;
+    double operateRate_;
     bool useCompressedImage_;
     size_t batchSize_;
     std::vector<std::vector<std::vector<float>>> featureVectors_;
@@ -50,4 +52,9 @@ private:
     cv::Mat                             distortion_coefficients_;
     cv::Mat                             current_frame_;  
     bool                                camera_info_ok_;  
+
+    ros::Timer timer_;
+    cv::Mat latest_image_;
+    ros::Time latest_image_time_;
+    ros::Time last_processed_image_time_;    
 };
