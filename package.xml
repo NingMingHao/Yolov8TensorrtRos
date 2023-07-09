@@ -17,6 +17,7 @@
   <buildtool_depend>catkin</buildtool_depend>
   <depend>opencv</depend>
   <depend>cv_bridge</depend>
+  <depend>image_transport</depend>
   <depend>sensor_msgs</depend>
   <depend>roscpp</depend>
   <depend>rospy</depend>

@@ -6,7 +6,7 @@
 
 typedef std::chrono::steady_clock Clock;
 
-EngineRosWrapper::EngineRosWrapper(ros::NodeHandle &nh, ros::NodeHandle &pnh, const Options &options):engineTool_(options),camera_info_ok_(false)
+EngineRosWrapper::EngineRosWrapper(ros::NodeHandle &nh, ros::NodeHandle &pnh, const Options &options):engineTool_(options)
 {
     // Read parameters
     // Get ROS parameters
@@ -31,15 +31,6 @@ EngineRosWrapper::EngineRosWrapper(ros::NodeHandle &nh, ros::NodeHandle &pnh, co
     pnh.param<float>("nms_threshold", nmsThreshold_, 0.4);
     ROS_INFO("[%s] nms threshold: %f", __APP_NAME__, nmsThreshold_);
 
-    pnh.param<std::string>("camera_info_src", cameraInfoTopic_, "");
-    ROS_INFO("[%s] camera info source: %s", __APP_NAME__, cameraInfoTopic_.c_str());
-
-    pnh.param<std::string>("input_topic", inputTopic_, "/pylon_camera_node_center/image_rect/compressed");
-    ROS_INFO("[%s] input image topic: %s", __APP_NAME__, inputTopic_.c_str());
-
-    pnh.param<std::string>("output_topic", outputTopic_, "/bbox_array_center");
-    ROS_INFO("[%s] output object topic: %s", __APP_NAME__, outputTopic_.c_str());
-
     pnh.param<std::string>("label_file", labelFile_, "");  
     ROS_INFO("[%s] label format file: %s", __APP_NAME__, labelFile_.c_str());
 
@@ -50,12 +41,31 @@ EngineRosWrapper::EngineRosWrapper(ros::NodeHandle &nh, ros::NodeHandle &pnh, co
     ROS_INFO("[%s] process rate: %f", __APP_NAME__, operateRate_);
     timer_ = nh.createTimer(ros::Duration(1.0 / operateRate_), &EngineRosWrapper::timerCallback, this);    
 
+    pnh.param<int>("camera_num", camera_num_, 1);
+    for (int id = 0; id < camera_num_; ++id) {
+        v_camera_info_sub_.push_back(
+        std::make_shared<ros::Subscriber>(pnh.subscribe<sensor_msgs::CameraInfo>(
+            "input/camera_info" + std::to_string(id), 1,
+            boost::bind(&EngineRosWrapper::IntrinsicsCallback, this, _1, id))));
+            camera_info_ok_[id] = false;
+            ROS_INFO("[%s] Subscribing to camera_info topic: %s", __APP_NAME__, v_camera_info_sub_.at(id)->getTopic().c_str());
+    }
+    image_transport_ = std::make_shared<image_transport::ImageTransport>(pnh);
+    image_buffers_.resize(camera_num_);
+    for (int id = 0; id < camera_num_; ++id) {
+        image_subs_.push_back(image_transport_->subscribe(
+        "input/image_raw" + std::to_string(id), 1,
+        boost::bind(&EngineRosWrapper::imageCallback, this, _1, id)));
+        ROS_INFO("[%s] Subscribing to image topic: %s", __APP_NAME__, image_subs_.at(id).getTopic().c_str());     
+        image_pubs_.push_back(image_transport_->advertise("output/image_raw" + std::to_string(id), 1));
+        image_buffers_.at(id).set_capacity(5);
+        publisher_obj_.push_back(nh.advertise<autoware_perception_msgs::DynamicObjectWithFeatureArray>(image_subs_.at(id).getTopic()+"/objects", 1));
+    }
+
     if (!readLabelFile(labelFile_, &labels_)) {
         ROS_ERROR("Could not find label file");
     }
     
-    useCompressedImage_ = pnh_.param<std::string>("input_topic", "/pylon_camera_node_center/image_rect/compressed").find("compressed") != std::string::npos;
-    ROS_INFO("[%s] Using %s image topic", __APP_NAME__, useCompressedImage_ ? "compressed" : "raw");
     bool succ = engineTool_.build(onnxModelpath_);
     if (!succ) {
         throw std::runtime_error("Unable to build TRT engine.");
@@ -65,75 +75,56 @@ EngineRosWrapper::EngineRosWrapper(ros::NodeHandle &nh, ros::NodeHandle &pnh, co
         throw std::runtime_error("Unable to load TRT engine.");
     }
 
-    ROS_INFO("[%s] Subscribing to... %s", __APP_NAME__, cameraInfoTopic_.c_str());
-    sub_camera_info_ = nh.subscribe(cameraInfoTopic_,
-                                        1,
-                                        &EngineRosWrapper::IntrinsicsCallback, this);
-    
-    ROS_INFO("[%s] Subscribing to... %s", __APP_NAME__, inputTopic_.c_str());
-    if (useCompressedImage_) {
-        sub_compressedImage_ = nh.subscribe(inputTopic_, 1, &EngineRosWrapper::callback_compressedImage, this);
-    } else {
-        sub_image_ = nh.subscribe(inputTopic_, 1, &EngineRosWrapper::callback_image, this);
-    }
-
-    publisher_obj_ = nh.advertise<autoware_perception_msgs::DynamicObjectWithFeatureArray>(pnh_.param<std::string>("output_topic", "/bbox_array_center"), 1);
-    std::string img_overlay = inputTopic_+"/debug";
-    publisher_img_overlay_ = nh.advertise<sensor_msgs::Image>(img_overlay, 1);
-    ROS_INFO("[%s] Publishing debug image in %s", __APP_NAME__, img_overlay.c_str());
-
     cudaError_t err = cudaStreamCreate(&inferenceCudaStream_);
     if (err != 0) {
         throw std::runtime_error("Unable to create inference cuda stream.");
-    }
+    }    
 }
 
 EngineRosWrapper::~EngineRosWrapper() {
     cudaStreamDestroy(inferenceCudaStream_);
 }
 
-void EngineRosWrapper::callback_compressedImage(const sensor_msgs::CompressedImageConstPtr& msg) {
-    auto start_time = Clock::now();
-    // convert to cv::Mat
-    latest_image_ = cv::imdecode(cv::Mat(msg->data), cv::IMREAD_COLOR);
-    if (camera_info_ok_)
-    {
-      // undistort image
-      cv::Mat in_image = latest_image_.clone();
-      cv::undistort(in_image, latest_image_, camera_intrinsics_, distortion_coefficients_);
-    }    
-}
-
-void EngineRosWrapper::callback_image(const sensor_msgs::ImageConstPtr& msg) {
-    // convert to cv::Mat
-    cv_bridge::CvImageConstPtr cv_ptr = cv_bridge::toCvShare(msg, "bgr8");
-    if (camera_info_ok_)
-    {
-      // undistort image
-      cv::Mat in_image = cv_ptr->image.clone();
-      cv::undistort(in_image, cv_ptr->image, camera_intrinsics_, distortion_coefficients_);
-    }
-    latest_image_ = cv_ptr->image;
-    latest_image_time_ = msg->header.stamp;
+void EngineRosWrapper::imageCallback(const sensor_msgs::ImageConstPtr & input_image_msg, const int id){
+  image_buffers_.at(id).push_front(input_image_msg);
 }
 
 // Timer callback function
-void EngineRosWrapper::timerCallback(const ros::TimerEvent&) {
-    // Check if there is a new image to process
-    // if (latest_image_.empty() || latest_image_time_ <= last_processed_image_time_)
-    //     return;
-    if (latest_image_.empty())
-        return;    
-    // Process the image
-    autoware_perception_msgs::DynamicObjectWithFeatureArray bboxarry = process(latest_image_);
-    // Set the time the image was processed
-    last_processed_image_time_ = latest_image_time_;
-    bboxarry.header.stamp = latest_image_time_;
-    // Publish the result
-    publisher_obj_.publish(bboxarry);
+void EngineRosWrapper::timerCallback(const ros::TimerEvent&) { 
+    // if image_buffers_ is empty then return
+    if (image_buffers_.empty())
+        return;
+    for (size_t id = 0; id < image_buffers_.size(); ++id) {     
+        const boost::circular_buffer<sensor_msgs::ImageConstPtr> & image_buffer = image_buffers_.at(id);
+        const image_transport::Publisher &image_pub = image_pubs_.at(id); 
+        if (image_buffer.empty())
+            return;              
+        // check if the newest image is out of date
+        // if (ros::Time::now() - image_buffer.front()->header.stamp > ros::Duration(2/operateRate_))
+        //     return;
+        cv_bridge::CvImagePtr cv_ptr;
+        // decode the newest image from buffer
+        cv_ptr = cv_bridge::toCvCopy(image_buffer.front(), image_buffer.front()->encoding);
+          
+        // Check if there is a new image to process
+        if (cv_ptr->image.empty())
+            return;    
+        // Process the image
+        if (camera_info_ok_.at(id))
+        {
+            // undistort image
+            cv::Mat in_image = cv_ptr->image.clone();
+            cv::undistort(in_image, cv_ptr->image, camera_intrinsics_.at(id), distortion_coefficients_.at(id));
+        }
+        autoware_perception_msgs::DynamicObjectWithFeatureArray bboxarry = process(cv_ptr->image,image_pub);
+        // Set the time the image was processed
+        bboxarry.header.stamp = image_buffer.at(id)->header.stamp;
+        // Publish the result
+        publisher_obj_.at(id).publish(bboxarry);
+    }
 }
 
-autoware_perception_msgs::DynamicObjectWithFeatureArray EngineRosWrapper::process(const cv::Mat &cpuImg)
+autoware_perception_msgs::DynamicObjectWithFeatureArray EngineRosWrapper::process(const cv::Mat &cpuImg, const image_transport::Publisher &image_pub)
 {
     auto start_time = Clock::now();
     // preprocess
@@ -268,7 +259,7 @@ autoware_perception_msgs::DynamicObjectWithFeatureArray EngineRosWrapper::proces
         object.object.semantic.type = autoware_perception_msgs::Semantic::UNKNOWN;
         }
         bboxArray.feature_objects.push_back(object);
-        if (publisher_img_overlay_.getNumSubscribers() < 1) {
+        if (image_pub.getNumSubscribers() < 1) {
             continue;
         }
         else{
@@ -291,15 +282,15 @@ autoware_perception_msgs::DynamicObjectWithFeatureArray EngineRosWrapper::proces
             cv::putText(cpuImg, ObjectLabel, cv::Point(left, new_top-15), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(0,0,0), 2);
         }     
     }
-    if (publisher_img_overlay_.getNumSubscribers() < 1) {
-        ROS_INFO("[%s] No subscriber for image overlay", __APP_NAME__);
+    if (image_pub.getNumSubscribers() < 1) {
+        ROS_INFO("[%s] No subscriber for debug image", __APP_NAME__);
     }
     else{
         cv_bridge::CvImage out_msg;
         out_msg.header   = std_msgs::Header();
         out_msg.encoding = sensor_msgs::image_encodings::BGR8;
         out_msg.image    = cpuImg;
-        publisher_img_overlay_.publish(out_msg.toImageMsg());
+        image_pub.publish(out_msg.toImageMsg());
     }
     //log the time
     auto postprocess_time = Clock::now();
@@ -323,27 +314,27 @@ bool EngineRosWrapper::readLabelFile(
   return true;
 }
 
-void EngineRosWrapper::IntrinsicsCallback(const sensor_msgs::CameraInfo &in_message)
+void EngineRosWrapper::IntrinsicsCallback(const sensor_msgs::CameraInfoConstPtr & in_message, const int id)
 {
-  image_size_.height = in_message.height;
-  image_size_.width = in_message.width;
+  image_size_[id].height = in_message->height;
+  image_size_[id].width = in_message->width;
 
-  camera_intrinsics_ = cv::Mat(3, 3, CV_64F);
+  camera_intrinsics_[id] = cv::Mat(3, 3, CV_64F);
   for (int row = 0; row < 3; row++)
   {
     for (int col = 0; col < 3; col++)
     {
-      camera_intrinsics_.at<double>(row, col) = in_message.K[row * 3 + col];
+      camera_intrinsics_[id].at<double>(row, col) = in_message->K[row * 3 + col];
     }
   }
 
-  distortion_coefficients_ = cv::Mat(1, 5, CV_64F);
+  distortion_coefficients_[id] = cv::Mat(1, 5, CV_64F);
   for (int col = 0; col < 5; col++)
   {
-    distortion_coefficients_.at<double>(col) = in_message.D[col];
+    distortion_coefficients_[id].at<double>(col) = in_message->D[col];
   }
 
-  sub_camera_info_.shutdown();
-  camera_info_ok_ = true;
+  v_camera_info_sub_.at(id)->shutdown();
+  camera_info_ok_[id] = true;
   ROS_INFO("[%s] CameraIntrinsics obtained.", __APP_NAME__);
 }
