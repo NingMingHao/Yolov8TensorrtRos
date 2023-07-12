@@ -117,8 +117,8 @@ void EngineRosWrapper::timerCallback(const ros::TimerEvent&) {
             cv::undistort(in_image, cv_ptr->image, camera_intrinsics_.at(id), distortion_coefficients_.at(id));
         }
         autoware_perception_msgs::DynamicObjectWithFeatureArray bboxarry = process(cv_ptr->image,image_pub);
-        // Set the time the image was processed
-        bboxarry.header.stamp = image_buffer.at(id)->header.stamp;
+        // Set the time the image was processed to current ROS time
+        bboxarry.header.stamp = ros::Time::now();
         // Publish the result
         publisher_obj_.at(id).publish(bboxarry);
     }
