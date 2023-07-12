@@ -10,7 +10,6 @@ EngineRosWrapper::EngineRosWrapper(ros::NodeHandle &nh, ros::NodeHandle &pnh, co
 {
     // Read parameters
     // Get ROS parameters
-    ros::NodeHandle pnh_("~");
     pnh.param<std::string>("onnx_model_path", onnxModelpath_, "");
     if (!onnxModelpath_.empty()) {
         ROS_INFO("[%s] onnx model path: %s", __APP_NAME__, onnxModelpath_.c_str());
