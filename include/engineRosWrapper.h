@@ -22,6 +22,7 @@ public:
     void timerCallback(const ros::TimerEvent&);
     autoware_perception_msgs::DynamicObjectWithFeatureArray process(const cv::Mat &img, const image_transport::Publisher &image_pub);
     bool readLabelFile(const std::string & filepath, std::vector<std::string> * labels);
+    ros::NodeHandle private_handle_;
 
 private:
     std::vector<std::string> labels_;

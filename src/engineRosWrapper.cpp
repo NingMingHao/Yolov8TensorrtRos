@@ -10,7 +10,7 @@ EngineRosWrapper::EngineRosWrapper(ros::NodeHandle &nh, ros::NodeHandle &pnh, co
 {
     // Read parameters
     // Get ROS parameters
-    ros::NodeHandle pnh_("~");
+    private_handle_ = pnh;
     pnh.param<std::string>("onnx_model_path", onnxModelpath_, "");
     if (!onnxModelpath_.empty()) {
         ROS_INFO("[%s] onnx model path: %s", __APP_NAME__, onnxModelpath_.c_str());
@@ -87,6 +87,14 @@ EngineRosWrapper::~EngineRosWrapper() {
 
 void EngineRosWrapper::imageCallback(const sensor_msgs::ImageConstPtr & input_image_msg, const int id){
   image_buffers_.at(id).push_front(input_image_msg);
+  // check if operation rate is changed
+  double newOperateRate;
+  private_handle_.getParam("process_rate", newOperateRate);
+  if (newOperateRate != operateRate_) {
+    operateRate_ = newOperateRate;
+    timer_.setPeriod(ros::Duration(1.0 / operateRate_));
+    ROS_INFO("[%s] process rate changed from %f to %f", __APP_NAME__, operateRate_, newOperateRate);
+  }
 }
 
 // Timer callback function

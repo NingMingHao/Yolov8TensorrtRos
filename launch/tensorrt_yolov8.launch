@@ -1,22 +1,25 @@
 <launch>
   <!-- auto convert compressed image to raw -->
   <node name="republish" type="republish" pkg="image_transport" output="screen" args="compressed in:=/pylon_camera_node_center/image_rect raw out:=/pylon_camera_node_center/image_rect" />  
-    <!-- auto convert compressed image to raw -->
   <node name="republish1" type="republish" pkg="image_transport" output="screen" args="compressed in:=/pylon_camera_node_left/image_rect raw out:=/pylon_camera_node_left/image_rect" />  
+  <node name="republish2" type="republish" pkg="image_transport" output="screen" args="compressed in:=/pylon_camera_node_right/image_rect raw out:=/pylon_camera_node_right/image_rect" />  
+  <node name="republish3" type="republish" pkg="image_transport" output="screen" args="compressed in:=/pylon_camera_node_back/image_rect raw out:=/pylon_camera_node_back/image_rect" /> 
+  <node name="republish4" type="republish" pkg="image_transport" output="screen" args="compressed in:=/usb_cam_left/image_raw raw out:=/usb_cam_left/image_raw" />  
+  <node name="republish5" type="republish" pkg="image_transport" output="screen" args="compressed in:=/usb_cam_right/image_raw raw out:=/usb_cam_right/image_raw" />   
 
   <arg name="input/camera_num" default="2"/>
   <arg name="input/image0" default="/pylon_camera_node_center/image_rect"/>
   <arg name="input/camera_info0" default="/pylon_camera_node_center/camera_info"/>
   <arg name="input/image1" default="/pylon_camera_node_left/image_rect"/>
   <arg name="input/camera_info1" default="/pylon_camera_node_left/camera_info"/>
-  <arg name="input/image2" default="/image_raw"/>
-  <arg name="input/camera_info2" default="/camera_info2"/>
-  <arg name="input/image3" default="/image_raw"/>
-  <arg name="input/camera_info3" default="/camera_info3"/>
-  <arg name="input/image4" default="/image_raw"/>
-  <arg name="input/camera_info4" default="/camera_info4"/>
-  <arg name="input/image5" default="/image_raw"/>
-  <arg name="input/camera_info5" default="/camera_info5"/>
+  <arg name="input/image2" default="/pylon_camera_node_right/image_rect"/>
+  <arg name="input/camera_info2" default="/pylon_camera_node_right/camera_info"/>
+  <arg name="input/image3" default="/pylon_camera_node_back/image_rect"/>
+  <arg name="input/camera_info3" default="/pylon_camera_node_back/camera_info"/>
+  <arg name="input/image4" default="/usb_cam_left/image_raw"/>
+  <arg name="input/camera_info4" default="/usb_cam_left/camera_info"/>
+  <arg name="input/image5" default="/usb_cam_right/image_raw"/>
+  <arg name="input/camera_info5" default="/usb_cam_right/camera_info"/>
   <arg name="input/image6" default="/image_raw"/>
   <arg name="input/camera_info6" default="/camera_info6"/>
   <arg name="input/image7" default="/image_raw"/>
@@ -24,7 +27,7 @@
 
   <!-- for eval variable-->
   <arg name="camera_num" value="$(arg input/camera_num)"/>
-  <arg name="process_rate" default="0.5" doc="Processing Frequency." />
+  <arg name="process_rate" default="10" doc="Processing Frequency(Hz)." />
 
   <arg name="label_file" default="$(find tensorrt_yolov8)/models/coco.names" doc="Label file path." />
   <arg name="half_precision" default="true" doc="Use half precision FP16 inference." />
