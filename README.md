@@ -4,6 +4,9 @@ This repo is part of the perception for the Waterloo all-weather autonomous shut
 
 ![figure](data/JetsonOrinTestVideo.gif)
 
+## Autoware Support
+Thanks to [Yaodong](https://github.com/yaodongC), the [autoware_support](https://github.com/NingMingHao/Yolov8TensorrtRos/tree/autoware_support) branch can support autoware_perception_msgs/DynamicObjectWithFeatureArray msg format!
+
 ## Instruction for Applying Yolov8 on ROS with Tensorrt acceleration
 ### I have uploaded the onnx models for medium, small and tiny versions of yolov8 for your usage
 ### Get Yolov8 onnx model using [Ultralytics](https://github.com/ultralytics/ultralytics)
