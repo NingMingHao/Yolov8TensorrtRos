@@ -10,7 +10,6 @@ EngineRosWrapper::EngineRosWrapper(ros::NodeHandle &nh, ros::NodeHandle &pnh, co
 {
     // Read parameters
     // Get ROS parameters
-    ros::NodeHandle pnh_("~");
     pnh.param<std::string>("onnx_model_path", onnxModelpath_, "");
     if (!onnxModelpath_.empty()) {
         ROS_INFO("[%s] onnx model path: %s", __APP_NAME__, onnxModelpath_.c_str());
@@ -288,8 +287,8 @@ autoware_perception_msgs::DynamicObjectWithFeatureArray EngineRosWrapper::proces
             const auto textSize = cv::getTextSize(ObjectLabel, cv::FONT_HERSHEY_SIMPLEX, 1, 1, &baseLine);
             int new_top = std::max(top, textSize.height);
             cv::rectangle(
-            cpuImg, cv::Point(left, new_top - textSize.height),cv::Point(left + textSize.width, new_top + baseLine), cv::Scalar::all(255), cv::FILLED);
-            cv::putText( cpuImg, ObjectLabel, cv::Point(left, new_top), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar());
+            cpuImg, cv::Point(left, new_top - textSize.height-15),cv::Point(left + textSize.width, new_top + baseLine-15), cv::Scalar::all(255), cv::FILLED);
+            cv::putText(cpuImg, ObjectLabel, cv::Point(left, new_top-15), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(0,0,0), 2);
         }     
     }
     if (publisher_img_overlay_.getNumSubscribers() < 1) {
