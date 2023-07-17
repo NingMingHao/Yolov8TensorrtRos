@@ -100,13 +100,17 @@ void EngineRosWrapper::imageCallback(const sensor_msgs::ImageConstPtr & input_im
 // Timer callback function
 void EngineRosWrapper::timerCallback(const ros::TimerEvent&) { 
     // if image_buffers_ is empty then return
-    if (image_buffers_.empty())
+    if (image_buffers_.empty()){
+        ROS_INFO("[%s] all camera buffer is empty", __APP_NAME__);
         return;
+    }
     for (size_t id = 0; id < image_buffers_.size(); ++id) {     
         const boost::circular_buffer<sensor_msgs::ImageConstPtr> & image_buffer = image_buffers_.at(id);
         const image_transport::Publisher &image_pub = image_pubs_.at(id); 
-        if (image_buffer.empty())
-            return;              
+        if (image_buffer.empty()){
+            ROS_INFO("[%s] individual camera buffer is empty", __APP_NAME__);
+            return;
+        }           
         // check if the newest image is out of date
         // if (ros::Time::now() - image_buffer.front()->header.stamp > ros::Duration(2/operateRate_))
         //     return;
@@ -115,22 +119,30 @@ void EngineRosWrapper::timerCallback(const ros::TimerEvent&) {
         cv_ptr = cv_bridge::toCvCopy(image_buffer.front(), image_buffer.front()->encoding);
           
         // Check if there is a new image to process
-        if (cv_ptr->image.empty())
-            return;    
-        // Process the image
-        if (camera_info_ok_.at(id))
-        {
-            // undistort image
-            cv::Mat in_image = cv_ptr->image.clone();
-            cv::undistort(in_image, cv_ptr->image, camera_intrinsics_.at(id), distortion_coefficients_.at(id));
+        if (cv_ptr->image.empty()){
+            ROS_INFO("[%s] cv_ptr->image is empty", __APP_NAME__);
+            return;
         }
-        autoware_perception_msgs::DynamicObjectWithFeatureArray bboxarry = process(cv_ptr->image,image_pub);
+        // To-do: Currently takes around 80ms to undistort and 20ms which is unacceptable!
+        // auto start_time = Clock::now();
+        // Process the image
+        // if (camera_info_ok_.at(id))
+        // {
+        //     // undistort image
+        //     cv::Mat in_image = cv_ptr->image.clone();
+        //     cv::undistort(in_image, cv_ptr->image, camera_intrinsics_.at(id), distortion_coefficients_.at(id));
+        // }
+        // auto distprocess_time = Clock::now();
+        // auto preprocess_duration = std::chrono::duration_cast<std::chrono::milliseconds>(distprocess_time - start_time).count();
+        // ROS_INFO("[%s] undistort preprocess time: %d ms", __APP_NAME__, preprocess_duration);
+        jsk_recognition_msgs::BoundingBoxArray bboxarry = process(cv_ptr->image,image_pub);
         // Set the time the image was processed to current ROS time
         bboxarry.header.stamp = ros::Time::now();
         // Publish the result
         publisher_obj_.at(id).publish(bboxarry);
     }
 }
+
 
 autoware_perception_msgs::DynamicObjectWithFeatureArray EngineRosWrapper::process(const cv::Mat &cpuImg, const image_transport::Publisher &image_pub)
 {
