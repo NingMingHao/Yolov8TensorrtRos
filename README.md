@@ -2,6 +2,9 @@
 
 This repo is part of the perception for the Waterloo all-weather autonomous shutlle ([WATonoBus](https://uwaterloo.ca/mechatronic-vehicle-systems-lab/research/watonobus)) from the Mechatronic Vehicle Systems Lab, University of Waterloo. If you are interested in our works, you are welcome to contact [Minghao Ning](mailto:m3ning@uwaterloo.ca). More details about the Lidar-Camera Fusion can be found in our paper: [An Efficient Approach to Generate Safe Drivable Space by LiDAR-Camera-HDmap Fusion](https://arxiv.org/abs/2410.22314).
 
+## Jetson Setup Guide
+
+Please refer to [JetsonSetupGuide](https://github.com/NingMingHao/JetsonSetupGuide) if you need to apply it on Nvidia Jetsons.
 
 ![figure](data/JetsonOrinTestVideo.gif)
 
